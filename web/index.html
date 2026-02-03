@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance Futures Trading Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Binance Futures Trading Dashboard</h1>
+            <p class="subtitle">Testnet Only - No Real Money</p>
+            <div class="base-url" id="baseUrlDisplay">
+                <strong>Environment:</strong> <span id="baseUrl">Loading...</span>
+            </div>
+        </header>
+
+        <!-- Info Banner -->
+        <section class="info-banner">
+            <div class="info-item">
+                <span class="emoji">💡</span>
+                <div>
+                    <strong>How It Works</strong>
+                    <p>Place orders on Binance Futures Testnet. API keys stay secure on the server - never exposed to browser.</p>
+                </div>
+            </div>
+            <div class="info-item">
+                <span class="emoji">🔒</span>
+                <div>
+                    <strong>Security Token</strong>
+                    <input 
+                        type="password" 
+                        id="dashboardToken" 
+                        placeholder="Optional: Enter if DASHBOARD_TOKEN is set"
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+        </section>
+
+        <!-- Connection Test -->
+        <section class="card">
+            <h2>🔌 Connection Test</h2>
+            <button id="testConnectionBtn" class="btn btn-primary">
+                Test Connection
+            </button>
+            <div id="connectionResult" class="result-box"></div>
+        </section>
+
+        <!-- Account Balance -->
+        <section class="card">
+            <h2>💰 Account Balance</h2>
+            <button id="checkBalanceBtn" class="btn btn-primary">
+                Check Balance
+            </button>
+            <div id="balanceResult" class="result-box"></div>
+            <small style="display: block; margin-top: 10px; color: #64748b;">
+                💡 <strong>Need funds?</strong> Visit <a href="https://testnet.binancefuture.com" target="_blank" style="color: #0d9488;">testnet.binancefuture.com</a> → Login → Get test USDT from faucet
+            </small>
+        </section>
+
+        <!-- Open Positions -->
+        <section class="card">
+            <h2>📊 Open Positions (Futures)</h2>
+            <button id="checkPositionsBtn" class="btn btn-primary">
+                Check Positions
+            </button>
+            <div id="positionsResult" class="result-box"></div>
+            <small style="display: block; margin-top: 10px; color: #64748b;">
+                ⚠️ <strong>FUTURES Trading:</strong> BUY = LONG (bet ↑) | SELL = SHORT (bet ↓)<br>
+                💡 Positions lock margin. Close to free balance.
+            </small>
+        </section>
+
+        <!-- Order Form -->
+        <section class="card">
+            <h2>📝 Place Order</h2>
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="symbol">Symbol:</label>
+                    <select id="symbol" required>
+                        <option value="BTCUSDT">BTCUSDT (Bitcoin)</option>
+                        <option value="ETHUSDT">ETHUSDT (Ethereum)</option>
+                        <option value="BNBUSDT">BNBUSDT (Binance Coin)</option>
+                    </select>
+                    <small>⚠️ Testnet-only symbols - Not all symbols may be available</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="side">Side:</label>
+                    <select id="side" required>
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Order Type:</label>
+                    <select id="type" required>
+                        <option value="MARKET">MARKET</option>
+                        <option value="LIMIT">LIMIT</option>
+                        <option value="STOP">STOP (Stop-Limit)</option>
+                        <option value="STOP_MARKET">STOP_MARKET</option>
+                    </select>
+                    <small id="typeHint">📊 <strong>MARKET:</strong> Instant | <strong>LIMIT:</strong> At price | <strong>STOP:</strong> Conditional trigger<br>
+                    ⚠️ <em>STOP orders use Algo API (/fapi/v1/algoOrder) - trigger validation enforced</em></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantity">Quantity:</label>
+                    <input 
+                        type="number" 
+                        id="quantity" 
+                        step="0.001" 
+                        placeholder="0.05"
+                        required
+                    >
+                    <small>💡 Testnet Range: 0.001-1000 BTC | 0.01-10000 ETH | Min notional: ~$5</small>
+                </div>
+
+                <div class="form-group" id="priceGroup" style="display: none;">
+                    <label for="price">Price:</label>
+                    <input 
+                        type="number" 
+                        id="price" 
+                        step="0.01" 
+                        placeholder="65000"
+                    >
+                    <small>📈 <strong>LIMIT:</strong> Price must be within ±10% of current market price on testnet</small>
+                </div>
+
+                <div class="form-group" id="stopPriceGroup" style="display: none;">
+                    <label for="stopPrice">Stop Price (Trigger):</label>
+                    <input 
+                        type="number" 
+                        id="stopPrice" 
+                        step="0.01" 
+                        placeholder="64000"
+                    >
+                    <small>🎯 <strong>STOP:</strong> Trigger price updates based on side (validation enforced)</small>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="dryRun">
+                        Dry Run (don't send to exchange)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-success" id="placeOrderBtn">
+                    Place Order
+                </button>
+            </form>
+        </section>
+
+        <!-- Order Summary -->
+        <section class="card" id="orderSummarySection" style="display: none;">
+            <h2>📋 Order Request Summary</h2>
+            <div id="orderSummary" class="result-box"></div>
+        </section>
+
+        <!-- Order Response -->
+        <section class="card" id="orderResponseSection" style="display: none;">
+            <h2>✅ Order Response</h2>
+            <div id="orderResponse" class="result-box"></div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>⚠️ <strong>TESTNET ONLY</strong> - No real funds at risk</p>
+        <p>Built for PrimeTrade.ai Python Developer Intern Assignment</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

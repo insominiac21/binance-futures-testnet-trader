@@ -1,0 +1,10 @@
+# Binance Futures Trading Bot - Dependencies
+
+# HTTP client with async support
+httpx>=0.27.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# Web dashboard (local development server)
+flask>=3.0.0
