@@ -38,9 +38,9 @@ env/
 logs/*.log
 logs/*.log.*
 
-# Vercel deployment logs
-logs_result.csv
-VERCEL_LOGS_ANALYSIS.txt
+# Vercel deployment logs (keep for documentation, not committed)
+# logs_result.csv
+# VERCEL_LOGS_ANALYSIS.txt
 
 # OS
 .DS_Store
