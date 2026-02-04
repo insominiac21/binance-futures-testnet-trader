@@ -4,7 +4,9 @@ A production-ready trading bot for Binance Futures Testnet (USDT-M). Built for t
 
 ## 🎯 Live Demo
 
-**Dashboard:** [https://your-vercel-app.vercel.app](https://your-vercel-app.vercel.app)
+**Dashboard:** [https://binance-futures-testnet-trader-assi.vercel.app](https://binance-futures-testnet-trader-assi.vercel.app)
+
+⚠️ **TESTNET ONLY** - No real funds at risk
 
 ## Features
 
