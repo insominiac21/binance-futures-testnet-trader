@@ -60,6 +60,14 @@ check_filters.py
 dist/
 *.tsbuildinfo
 
+# Old TypeScript/Node files (removed - using Python backend)
+api/*.ts
+api/_lib/
+package.json
+tsconfig.json
+package-lock.json
+node_modules/
+
 # Test coverage
 .coverage
 htmlcov/
