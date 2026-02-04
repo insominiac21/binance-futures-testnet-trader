@@ -117,6 +117,7 @@
                         required
                     >
                     <small>💡 Testnet Range: 0.001-1000 BTC | 0.01-10000 ETH | Min notional: ~$5</small>
+                    <div id="quantityError" style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
                 </div>
 
                 <div class="form-group" id="priceGroup" style="display: none;">
@@ -128,6 +129,7 @@
                         placeholder="65000"
                     >
                     <small>📈 <strong>LIMIT:</strong> Price must be within ±10% of current market price on testnet</small>
+                    <div id="priceError" style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
                 </div>
 
                 <div class="form-group" id="stopPriceGroup" style="display: none;">
@@ -139,6 +141,7 @@
                         placeholder="64000"
                     >
                     <small>🎯 <strong>STOP:</strong> Trigger price updates based on side (validation enforced)</small>
+                    <div id="stopPriceError" style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
                 </div>
 
                 <div class="form-group checkbox-group">

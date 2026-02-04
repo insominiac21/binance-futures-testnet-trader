@@ -159,7 +159,7 @@ function updatePriceHints() {
     validateInputs();
 }
 
-// Real-time validation function - blocks invalid STOP orders
+// Real-time validation function - validates each field independently
 function validateInputs() {
     const priceInput = document.getElementById('price');
     const stopPriceInput = document.getElementById('stopPrice');
@@ -169,59 +169,129 @@ function validateInputs() {
     const side = document.getElementById('side').value;
     const symbol = document.getElementById('symbol');
     const stopPriceGroup = document.getElementById('stopPriceGroup');
+    const priceGroup = document.getElementById('priceGroup');
     
-    // Clear all validity first
-    priceInput.setCustomValidity('');
-    stopPriceInput.setCustomValidity('');
-    quantityInput.setCustomValidity('');
+    // Get error message divs
+    const quantityError = document.getElementById('quantityError');
+    const priceError = document.getElementById('priceError');
+    const stopPriceError = document.getElementById('stopPriceError');
+    
+    // Clear all errors
+    quantityError.style.display = 'none';
+    priceError.style.display = 'none';
+    stopPriceError.style.display = 'none';
     submitBtn.disabled = false;
     
-    // Only validate STOP orders if the stopPrice field is visible and has a value
-    const isStopOrderType = orderType === 'STOP' || orderType === 'STOP_MARKET';
-    const stopPriceVisible = stopPriceGroup.style.display !== 'none';
-    const hasStopPrice = stopPriceInput.value && stopPriceInput.value.trim() !== '';
+    let hasErrors = false;
     
-    if (isStopOrderType && stopPriceVisible && hasStopPrice) {
-        const currentPrice = marketPrices[symbol.value];
-        const stopPrice = parseFloat(stopPriceInput.value);
-        const limitPrice = parseFloat(priceInput.value) || 0;
-        
-        if (!currentPrice) {
-            stopPriceInput.setCustomValidity('Waiting for live price data...');
-            submitBtn.disabled = true;
-            return;
+    const currentPrice = marketPrices[symbol.value];
+    const quantity = parseFloat(quantityInput.value);
+    const price = parseFloat(priceInput.value);
+    const stopPrice = parseFloat(stopPriceInput.value);
+    
+    // 1. Validate QUANTITY for all order types
+    if (quantityInput.value && quantity > 0) {
+        // Calculate notional value
+        let notionalValue = 0;
+        if (orderType === 'MARKET' && currentPrice) {
+            notionalValue = quantity * currentPrice;
+        } else if (orderType === 'LIMIT' && price > 0) {
+            notionalValue = quantity * price;
+        } else if ((orderType === 'STOP' || orderType === 'STOP_MARKET') && stopPrice > 0) {
+            notionalValue = quantity * stopPrice;
         }
         
-        let errorMsg = '';
-        
-        if (side === 'BUY') {
-            // BUY STOP: trigger must be ABOVE current price (breakout)
-            if (stopPrice <= currentPrice) {
-                errorMsg = `❌ BUY STOP trigger must be ABOVE current price ($${currentPrice.toFixed(2)}). Enter > $${currentPrice.toFixed(2)}`;
-            } else if (orderType === 'STOP' && limitPrice && limitPrice < stopPrice) {
-                errorMsg = `⚠️ Limit price ($${limitPrice}) should be >= trigger ($${stopPrice}) for BUY STOP`;
-            }
-        } else {
-            // SELL STOP: trigger must be BELOW current price (stop-loss)
-            if (stopPrice >= currentPrice) {
-                errorMsg = `❌ SELL STOP trigger must be BELOW current price ($${currentPrice.toFixed(2)}). Enter < $${currentPrice.toFixed(2)}`;
-            } else if (orderType === 'STOP' && limitPrice && limitPrice > stopPrice) {
-                errorMsg = `⚠️ Limit price ($${limitPrice}) should be <= trigger ($${stopPrice}) for SELL STOP`;
-            }
+        // Check balance (cost = notional for new positions)
+        if (availableBalance > 0 && notionalValue > availableBalance) {
+            quantityError.textContent = `❌ Insufficient balance! Need $${notionalValue.toFixed(2)} but only have $${availableBalance.toFixed(2)}`;
+            quantityError.style.display = 'block';
+            hasErrors = true;
         }
         
-        if (errorMsg) {
-            stopPriceInput.setCustomValidity(errorMsg);
-            submitBtn.disabled = true;
-            stopPriceInput.reportValidity();
-            return;
+        // Check minimum notional
+        if (notionalValue > 0 && notionalValue < 5) {
+            quantityError.textContent = `❌ Order value too small! Need minimum $5, currently $${notionalValue.toFixed(2)}`;
+            quantityError.style.display = 'block';
+            hasErrors = true;
         }
     }
+    
+    // 2. Validate LIMIT PRICE (only for LIMIT and STOP orders)
+    if ((orderType === 'LIMIT' || orderType === 'STOP') && priceGroup.style.display !== 'none' && priceInput.value) {
+        if (!currentPrice) {
+            priceError.textContent = '⏳ Waiting for live price data...';
+            priceError.style.display = 'block';
+            hasErrors = true;
+        } else if (price <= 0) {
+            priceError.textContent = '❌ Price must be greater than 0';
+            priceError.style.display = 'block';
+            hasErrors = true;
+        } else {
+            // Check ±10% price range for LIMIT orders
+            const minAllowed = currentPrice * 0.9;
+            const maxAllowed = currentPrice * 1.1;
+            
+            if (orderType === 'LIMIT' && (price < minAllowed || price > maxAllowed)) {
+                priceError.textContent = `⚠️ Price should be within ±10% of current ($${currentPrice.toFixed(2)}): $${minAllowed.toFixed(2)} - $${maxAllowed.toFixed(2)}`;
+                priceError.style.display = 'block';
+                hasErrors = true;
+            }
+        }
+    }
+    
+    // 3. Validate STOP PRICE (only for STOP orders)
+    const isStopOrderType = orderType === 'STOP' || orderType === 'STOP_MARKET';
+    const stopPriceVisible = stopPriceGroup.style.display !== 'none';
+    
+    if (isStopOrderType && stopPriceVisible && stopPriceInput.value) {
+        if (!currentPrice) {
+            stopPriceError.textContent = '⏳ Waiting for live price data...';
+            stopPriceError.style.display = 'block';
+            hasErrors = true;
+        } else if (stopPrice <= 0) {
+            stopPriceError.textContent = '❌ Stop price must be greater than 0';
+            stopPriceError.style.display = 'block';
+            hasErrors = true;
+        } else {
+            // Validate trigger direction
+            if (side === 'BUY' && stopPrice <= currentPrice) {
+                stopPriceError.textContent = `❌ BUY STOP trigger must be ABOVE current price ($${currentPrice.toFixed(2)})`;
+                stopPriceError.style.display = 'block';
+                hasErrors = true;
+            } else if (side === 'SELL' && stopPrice >= currentPrice) {
+                stopPriceError.textContent = `❌ SELL STOP trigger must be BELOW current price ($${currentPrice.toFixed(2)})`;
+                stopPriceError.style.display = 'block';
+                hasErrors = true;
+            }
+            
+            // Validate limit price vs trigger for STOP orders
+            if (orderType === 'STOP' && price > 0) {
+                if (side === 'BUY' && price < stopPrice) {
+                    priceError.textContent = `⚠️ Limit price should be >= trigger ($${stopPrice.toFixed(2)}) for BUY STOP`;
+                    priceError.style.display = 'block';
+                    hasErrors = true;
+                } else if (side === 'SELL' && price > stopPrice) {
+                    priceError.textContent = `⚠️ Limit price should be <= trigger ($${stopPrice.toFixed(2)}) for SELL STOP`;
+                    priceError.style.display = 'block';
+                    hasErrors = true;
+                }
+            }
+        }
+    }
+    
+    submitBtn.disabled = hasErrors;
 }
 
 // Update hints when symbol or side changes
-symbolSelect.addEventListener('change', updatePriceHints);
-document.getElementById('side').addEventListener('change', updatePriceHints);
+symbolSelect.addEventListener('change', () => {
+    updatePriceHints();
+    validateInputs();
+});
+document.getElementById('side').addEventListener('change', () => {
+    updatePriceHints();
+    validateInputs();
+});
+document.getElementById('type').addEventListener('change', validateInputs);
 
 // Add real-time validation on input
 document.getElementById('price').addEventListener('input', validateInputs);
