@@ -8,6 +8,27 @@ A production-ready trading bot for Binance Futures Testnet (USDT-M). Built for t
 
 ⚠️ **TESTNET ONLY** - No real funds at risk
 
+## 📚 Trading Concepts (Quick Reference)
+
+### Order Types
+- **MARKET Order**: Execute immediately at current market price. Fast but price not guaranteed.
+- **LIMIT Order**: Execute only at specified price or better. Price guaranteed but execution not guaranteed.
+- **STOP Order**: Triggers when price hits trigger level, then places limit order. Used for breakouts or stop-losses.
+- **STOP_MARKET Order**: Like STOP but executes as market order when triggered. Guaranteed execution, price not guaranteed.
+
+### Position Types (Futures)
+- **LONG (BUY)**: Profit when price goes UP. You're betting the asset will increase in value.
+- **SHORT (SELL)**: Profit when price goes DOWN. You're betting the asset will decrease in value.
+
+### Account Balance
+- **Total Balance**: All funds in your account (available + locked in positions)
+- **Available Balance**: Funds free to open new positions
+- **Margin**: Collateral locked when you open a position (leverage allows trading more than you have)
+
+### Key Differences: Spot vs Futures
+- **Spot Trading**: Buy/sell actual assets, pay full price
+- **Futures Trading**: Trade contracts with leverage, only pay margin (can lose more than invested!)
+
 ## Features
 
 ### Python CLI
@@ -40,48 +61,44 @@ A production-ready trading bot for Binance Futures Testnet (USDT-M). Built for t
 ## Requirements
 
 - Python 3.8+
-- `uv` package manager (recommended) or `pip`
+- `uv` package manager (fast Python package installer)
 - Binance Futures Testnet account with API keys
-- (Optional) Node.js 18+ for web dashboard deployment
 
-## Project Structure
+## Setup
 
+### 1. Install uv (if not already installed)
+
+**Windows (PowerShell):**
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
-trading_bot/
-├── bot/                      # Python trading bot package
-│   ├── __init__.py           # Package initialization
-│   ├── client.py             # Binance Futures REST client (HMAC SHA256)
-│   ├── orders.py             # Order placement business logic
-│   ├── validators.py         # Input validation utilities
-│   ├── logging_config.py     # Logger with rotating file handler
-│   └── models.py             # Data models (OrderRequest, OrderResponse)
-├── web/                      # Web dashboard (HTML/CSS/JS)
-│   ├── index.html            # Dashboard UI
-│   ├── styles.css            # Styling
-│   ├── app.js                # Frontend logic
-│   └── README_WEB.md         # Dashboard documentation
-├── api/                      # Vercel serverless functions (TypeScript)
-│   ├── time.ts               # GET /api/time endpoint
-│   ├── place-order.ts        # POST /api/place-order endpoint
-│   └── _lib/                 # Shared utilities
-│       ├── binance.ts        # Binance API client
-│       ├── validate.ts       # Validation helpers
-│       └── types.ts          # TypeScript types
-├── docs/
-│   ├── ARCHITECTURE.md       # Architecture & data flow diagrams
-│   └── STEP_BY_STEP.md       # Detailed setup & run walkthrough
-├── logs/
-│   └── .gitkeep              # Log files stored here
-├── cli.py                    # Python CLI entry point
-├── package.json              # Node.js dependencies
-├── tsconfig.json             # TypeScript configuration
-├── vercel.json               # Vercel deployment config
-├── README.md                 # This file
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment variables template
-├── .gitignore                # Git ignore rules
-└── CHECKLIST.md              # Assignment acceptance criteria
+
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+### 2. Create Virtual Environment with uv
+
+**Windows (PowerShell):**
+```powershell
+uv venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**macOS/Linux:**
+```bash
+uv venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+uv pip install -r requirements.txt
+```
+
+---
 
 ## Quick Start
 
@@ -109,34 +126,57 @@ git push origin main
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment guide.**
 
-### 🐍 Local Development
+### 🐍 Local Development (Quick Start)
 
 ```bash
-# 1. Create virtual environment
-python -m venv .venv
+# 1. Install uv (if needed)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"  # Windows
+# OR: curl -LsSf https://astral.sh/uv/install.sh | sh       # macOS/Linux
+
+# 2. Create virtual environment
+uv venv .venv
 .\.venv\Scripts\Activate.ps1  # Windows
 source .venv/bin/activate      # macOS/Linux
 
-# 2. Install dependencies
-pip install -r requirements.txt
+# 3. Install dependencies
+uv pip install -r requirements.txt
 
-# 3. Configure environment
+# 4. Configure environment
 cp .env.example .env
 # Edit .env with your Binance testnet API keys
 
-# 4. Run dashboard
+# 5. Run CLI
+python cli.py test-connection
+python cli.py place-order --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01
+
+# OR run web dashboard
 python run_local_dashboard.py
 ```
 
-Visit http://localhost:5000
+Visit http://localhost:5000 for the web interface
 
 ---
 
-### 3. Configure API Credentials
+## API Credentials Setup
 
-Get your API keys from [Binance Futures Testnet](https://testnet.binancefuture.com).
+Get your API keys from [Binance Futures Testnet](https://testnet.binancefuture.com):
+1. Login to testnet
+2. Go to API Management
+3. Create new API key
+4. **Enable "Futures Trading" permission**
+5. Save your API Key and Secret
 
-**Option A: Environment Variables**
+**Configure via .env file (Recommended):**
+
+```bash
+cp .env.example .env
+# Edit .env and add your credentials:
+# BINANCE_API_KEY=your_api_key_here
+# BINANCE_API_SECRET=your_api_secret_here
+# BINANCE_BASE_URL=https://testnet.binancefuture.com
+```
+
+**Or via Environment Variables:**
 
 **Windows (PowerShell):**
 ```powershell
@@ -150,12 +190,7 @@ export BINANCE_API_KEY="your_api_key_here"
 export BINANCE_API_SECRET="your_api_secret_here"
 ```
 
-**Option B: .env File**
-
-```bash
-cp .env.example .env
-# Edit .env and add your credentials
-```
+---
 
 ## Usage
 
@@ -354,6 +389,39 @@ Current ETH Price: $2264
 - ✅ **Educational**: Users learn proper STOP order logic
 - ✅ **Future-proof**: Works with latest Binance Futures API (2025+)
 - ✅ **Complete**: Supports all conditional order types
+
+---
+
+## Project Structure
+
+```
+trading_bot/
+├── bot/                      # Core trading bot package
+│   ├── __init__.py           # Package initialization
+│   ├── client.py             # Binance Futures REST client (HMAC SHA256)
+│   ├── orders.py             # Order placement business logic
+│   ├── validators.py         # Input validation utilities
+│   ├── logging_config.py     # Rotating file handler configuration
+│   └── models.py             # Data models (OrderRequest, OrderResponse)
+├── web/                      # Web dashboard frontend
+│   ├── index.html            # Dashboard UI with 4 order types
+│   ├── styles.css            # Teal/emerald theme styling
+│   ├── app.js                # Frontend logic (validation, API calls)
+│   └── README_WEB.md         # Dashboard documentation
+├── api/                      # Vercel serverless function
+│   └── index.py              # Flask app wrapper for Vercel
+├── logs/                     # Application logs
+│   └── trading_bot.log       # Rotating logs (1MB, 3 backups)
+├── cli.py                    # CLI entry point (Typer framework)
+├── run_local_dashboard.py    # Flask backend (433 lines)
+├── requirements.txt          # Python dependencies (httpx, flask, typer)
+├── vercel.json               # Vercel deployment configuration
+├── .env.example              # Environment variables template
+├── .gitignore                # Git ignore rules
+├── README.md                 # This file
+├── DEPLOYMENT.md             # Vercel deployment guide
+└── VERCEL_LOGS_ANALYSIS.txt  # Production logs analysis
+```
 
 ---
 
